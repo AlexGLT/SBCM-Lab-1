@@ -16,7 +16,7 @@ unsigned long long* bigIntConverting(std::string& number)
 	{
 		std::string nullStr;
 
-		for (int i = 16 - numberSize; i > 0; i--)
+		for (int i = 16 - (numberSize % 16); i > 0; i--)
 		{
 			nullStr += "0";
 			numberSize++;
@@ -31,27 +31,11 @@ unsigned long long* bigIntConverting(std::string& number)
 
 	for (int i = bigNumberSize; i > 0; i--)
 	{
-		unsigned long long temp = 0;
-
-		for (int j = 16; j > 0; j--)
-		{
-			short grade = static_cast<short>(number[(i * j) - 1]);
-			std::cout << i << "; " << j << std::endl;
-			if (grade < 58)
-			{
-				unsigned long long step = powl(16, (16 - j));
-				temp += (grade - 48) * step;
-			}
-			else
-			{
-				unsigned long long step = powl(16, (16 - j));
-				temp += (grade - 55) * powl(16, (16 - j));
-			}
-
-			std::cout << temp << std::endl;
-		}
-
-		bigNumber[31 - (bigNumberSize - i)] = temp;;
+		unsigned int secondPart = strtoul(number.substr((i * 16) - 8, 8).c_str(), NULL, 16);
+		
+		unsigned long long firstPart = strtoul(number.substr((i * 16) - 16, 8).c_str(), NULL, 16);
+		
+		bigNumber[31 - (bigNumberSize - i)] = (firstPart << 32) + secondPart;
 	}
 
 	for (int i = 31 - bigNumberSize; i >= 0; i--)
