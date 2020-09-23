@@ -50,8 +50,7 @@ unsigned int* toBigIntConverting(std::string& number, short bitRate)
 			
 			for (short j = bitForHexCount; j > 0; j--)
 			{
-				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] =
-					(numberHexBit & static_cast<short>(pow(2, (bitForHexCount - j)))) >> (bitForHexCount - j);
+				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] = (numberHexBit >> (4 - j)) & 1;
 			}				
 		}
 	}
