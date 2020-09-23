@@ -1,46 +1,59 @@
 ﻿#include <iostream> 
 #include <cmath>
 
-int* LongAdd()
+unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB)
 {
 	return nullptr;
 }
 
-unsigned long long* bigIntConverting(std::string& number)
+unsigned int* toBigIntConverting(std::string& number, short bitRate)
 {
-	auto* bigNumber = new unsigned long long[32];
+	short bigBitCount = 2048 / bitRate;
+	auto* bigNumber = new unsigned int[bigBitCount];
+	std::fill(&bigNumber[0], &bigNumber[bigBitCount - 1], 0);
+		
+	short numberSize = number.length();
 
-	int numberSize = number.length();
-
-	if (numberSize % 16 != 0)
+	if (bitRate >= 4)
 	{
-		std::string nullStr;
+		short hexBitCount = (bitRate / 4);
 
-		for (int i = 16 - (numberSize % 16); i > 0; i--)
+		if (numberSize % hexBitCount != 0)
 		{
-			nullStr += "0";
-			numberSize++;
+			std::string nullStr;
+
+			for (int i = bitRate - (numberSize % hexBitCount); i > 0; i--)
+			{
+				nullStr += "0";
+				numberSize++;
+			}
+
+			number = nullStr + number;
 		}
-
-		number = nullStr + number;
-	}
-
-	std::cout << number << std::endl;
-	
-	int bigNumberSize = numberSize / 16;
-
-	for (int i = bigNumberSize; i > 0; i--)
-	{
-		unsigned int secondPart = strtoul(number.substr((i * 16) - 8, 8).c_str(), NULL, 16);
 		
-		unsigned long long firstPart = strtoul(number.substr((i * 16) - 16, 8).c_str(), NULL, 16);
+		int numberBigBitCount = numberSize / hexBitCount;
 		
-		bigNumber[31 - (bigNumberSize - i)] = (firstPart << 32) + secondPart;
+		for (int i = numberBigBitCount; i > 0; i--)
+		{
+			bigNumber[bigBitCount - 1 - (numberBigBitCount - i)] =
+				strtoul(number.substr((i * hexBitCount) - hexBitCount, hexBitCount).c_str(), nullptr, 16);
+		}
 	}
-
-	for (int i = 31 - bigNumberSize; i >= 0; i--)
+	else
 	{
-		bigNumber[i] = 0;
+		for (int i = numberSize; i > 0; i--)
+		{
+			short numberHexBit = strtol(number.substr(i - 1, 1).c_str(), nullptr, 16);
+
+			//count of big bits for one hex cipher
+			short bitForHexCount = 4 >> (bitRate - 1);
+			
+			for (short j = bitForHexCount; j > 0; j--)
+			{
+				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] =
+					(numberHexBit & static_cast<short>(pow(2, (bitForHexCount - j)))) >> (bitForHexCount - j);
+			}				
+		}
 	}
 
 	return bigNumber;
@@ -48,14 +61,24 @@ unsigned long long* bigIntConverting(std::string& number)
 
 int main()
 {
+	short bitRate;
 	std::string number;
+
+	std::cout << "Input numbers bit rate: ";
+	std::cin >> bitRate;
+
+	std::cout << "Input number A: ";
 	std::cin >> number;
+	unsigned int* numberA = toBigIntConverting(number, bitRate);
+	
+	/*std::cout << "Input number B: ";
+	std::cin >> number;
+	unsigned int* numberB = toBigIntConverting(number, bitRate);*/
 
-	unsigned long long* numberA = bigIntConverting(number);
-
-	for (int i = 0; i < 32; i++)
+	
+	for (int i = 0; i < (2048 / bitRate); i++)
 	{
-		std::cout << numberA[i] << "|";
+		std::cout << numberA[i];
 	}
 
 	return 0;
