@@ -2,18 +2,30 @@
 #include <cmath>
 #include <string>
 
-unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB)
+unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, short bitRate)
 {
-	/*auto* numberC = new unsigned int[33];
+	auto module = static_cast<unsigned int>(pow(2, bitRate));
+	
+	short bigBitCount = 2048 / bitRate;
+	
+	auto* numberC = new unsigned int[bigBitCount + 1];
 
-	short c = 0;
-	
-	for (short i = 31; i >= 0; i--)
+	short carry = 0;
+
+	for (short i = bigBitCount - 1; i >= 0; i--)
 	{
-		numberC[i + 1] = numberA[i] + numberB[i];
-	}*/
+		unsigned long long summ = carry;
+		summ += numberA[i];
+		summ += numberB[i];
+
+		numberC[i + 1] = summ & (module - 1);
+		
+		carry = summ >> bitRate;
+	}
+
+	numberC[0] = carry;
 	
-	return nullptr;
+	return numberC;
 }
 
 unsigned int* toBigIntConverting(std::string& number, short bitRate)
@@ -71,10 +83,11 @@ unsigned int* toBigIntConverting(std::string& number, short bitRate)
 std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
 {
 	auto* hexNumber = new std::string;
-
+	short bigBitCount = 2048 / bitRate;
+	
 	if (bitRate >= 4)
 	{
-		for (short i = 0; i < 2048 / bitRate; i++)
+		for (short i = 0; i < bigBitCount + 1; i++)
 		{
 			if (bigNumber[i] != 0)
 			{
@@ -99,7 +112,7 @@ std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
 
 	short zeroCount = 0;
 
-	for (short i = 0; i < bitRate / 4 - 1; i++)
+	for (short i = 0; i < bitRate / 4; i++)
 	{
 		if ((*hexNumber)[i] == '0')
 		{
@@ -124,16 +137,13 @@ int main()
 	std::cin >> number;
 	unsigned int* numberA = toBigIntConverting(number, bitRate);
 	
-	/*std::cout << "Input number B: ";
+	std::cout << "Input number B: ";
 	std::cin >> number;
-	unsigned int* numberB = toBigIntConverting(number, bitRate);*/
+	unsigned int* numberB = toBigIntConverting(number, bitRate);
 
-	for (int i = 0; i < (2048 / bitRate); i++)
-	{
-		std::cout << numberA[i];
-	}
+	unsigned int* numberC = LongAdd(numberA, numberB, bitRate);
 
-	std::cout << *toHexConverting(numberA, bitRate);
+	std::cout << *toHexConverting(numberC, bitRate);
 	
 	return 0;
 }
