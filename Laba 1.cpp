@@ -1,8 +1,18 @@
 ﻿#include <iostream> 
 #include <cmath>
+#include <string>
 
 unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB)
 {
+	/*auto* numberC = new unsigned int[33];
+
+	short c = 0;
+	
+	for (short i = 31; i >= 0; i--)
+	{
+		numberC[i + 1] = numberA[i] + numberB[i];
+	}*/
+	
 	return nullptr;
 }
 
@@ -58,6 +68,50 @@ unsigned int* toBigIntConverting(std::string& number, short bitRate)
 	return bigNumber;
 }
 
+std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
+{
+	auto* hexNumber = new std::string;
+
+	if (bitRate >= 4)
+	{
+		for (short i = 0; i < 2048 / bitRate; i++)
+		{
+			if (bigNumber[i] != 0)
+			{
+				for (short j = 0; j < bitRate; j += 4)
+				{
+					short cipher = (bigNumber[i] >> ((bitRate - 4) - j)) & 15;
+
+					if (cipher > 9)
+					{
+						cipher += 55;
+					}
+					else
+					{
+						cipher += 48;
+					}
+					
+					*hexNumber += static_cast<char>(cipher);
+				}
+			}
+		}
+	}
+
+	short zeroCount = 0;
+
+	for (short i = 0; i < bitRate / 4 - 1; i++)
+	{
+		if ((*hexNumber)[i] == '0')
+		{
+			zeroCount++;
+		}
+	}
+	
+	(*hexNumber).erase(0, zeroCount);
+	
+	return hexNumber;
+}
+
 int main()
 {
 	short bitRate;
@@ -74,11 +128,12 @@ int main()
 	std::cin >> number;
 	unsigned int* numberB = toBigIntConverting(number, bitRate);*/
 
-	
 	for (int i = 0; i < (2048 / bitRate); i++)
 	{
 		std::cout << numberA[i];
 	}
 
+	std::cout << *toHexConverting(numberA, bitRate);
+	
 	return 0;
 }
