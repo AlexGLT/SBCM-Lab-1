@@ -4,11 +4,12 @@
 
 unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, short bitRate)
 {
-	auto module = static_cast<unsigned int>(pow(2, bitRate));
-	
+	unsigned int module = 0;
+	module--;
+
 	short bigBitCount = 2048 / bitRate;
 	
-	auto* numberC = new unsigned int[bigBitCount + 1];
+	auto* numberC = new unsigned int[bigBitCount];
 
 	short carry = 0;
 
@@ -18,13 +19,49 @@ unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, 
 		summ += numberA[i];
 		summ += numberB[i];
 
-		numberC[i + 1] = summ & (module - 1);
+		numberC[i] = summ & module;
 		
 		carry = summ >> bitRate;
 	}
 
 	numberC[0] = carry;
 	
+	return numberC;
+}
+
+unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, short bitRate)
+{
+	unsigned long long module = static_cast<unsigned long long>(1) << bitRate;
+
+	short bigBitCount = 2048 / bitRate;
+	auto* numberC = new unsigned int[bigBitCount];
+
+	short borrow = 0;
+
+	for (short i = bigBitCount - 1; i >= 0; i--)
+	{
+		long long substraction = numberA[i];
+		substraction -= numberB[i];
+		substraction -= borrow;
+
+		if (substraction >= 0)
+		{
+			numberC[i] = substraction;
+			borrow = 0;
+		}
+		else
+		{
+			numberC[i] = module + substraction;
+		}
+
+		/*std::cout << i << ": " << numberC[i] << std::endl;*/
+	}
+
+	if (borrow != 0)
+	{
+		std::fill(&numberC[0], &numberC[bigBitCount - 1], 0);
+	}
+
 	return numberC;
 }
 
@@ -87,7 +124,7 @@ std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
 	
 	if (bitRate >= 4)
 	{
-		for (short i = 0; i < bigBitCount + 1; i++)
+		for (short i = 0; i < bigBitCount; i++)
 		{
 			if (bigNumber[i] != 0)
 			{
@@ -136,14 +173,18 @@ int main()
 	std::cout << "Input number A: ";
 	std::cin >> number;
 	unsigned int* numberA = toBigIntConverting(number, bitRate);
-	
+
 	std::cout << "Input number B: ";
 	std::cin >> number;
 	unsigned int* numberB = toBigIntConverting(number, bitRate);
 
-	unsigned int* numberC = LongAdd(numberA, numberB, bitRate);
+	std::cout << "Result of addition: ";
+	unsigned int* addition = LongAdd(numberA, numberB, bitRate);
+	std::cout << *toHexConverting(addition, bitRate) << std::endl;
 
-	std::cout << *toHexConverting(numberC, bitRate);
-	
+	std::cout << "Result of substraction: ";
+	unsigned int* substraction = LongSub(numberA, numberB, bitRate);
+	std::cout << *toHexConverting(substraction, bitRate) << std::endl;
+
 	return 0;
 }
