@@ -2,6 +2,107 @@
 #include <cmath>
 #include <string>
 
+unsigned int* toBigIntConverting(std::string& number, short bitRate)
+{
+	short bigBitCount = 2048 / bitRate;
+	auto* bigNumber = new unsigned int[bigBitCount];
+	std::fill(&bigNumber[0], &bigNumber[bigBitCount], 0);
+
+	short numberSize = number.length();
+
+	if (bitRate >= 4)
+	{
+		short hexBitCount = (bitRate / 4);
+
+		if (numberSize % hexBitCount != 0)
+		{
+			std::string nullStr;
+
+			for (int i = bitRate - (numberSize % hexBitCount); i > 0; i--)
+			{
+				nullStr += "0";
+				numberSize++;
+			}
+
+			number = nullStr + number;
+		}
+
+		int numberBigBitCount = numberSize / hexBitCount;
+
+		for (int i = numberBigBitCount; i > 0; i--)
+		{
+			bigNumber[bigBitCount - 1 - (numberBigBitCount - i)] =
+				strtoul(number.substr((i * hexBitCount) - hexBitCount, hexBitCount).c_str(), nullptr, 16);
+		}
+	}
+	else
+	{
+		for (int i = numberSize; i > 0; i--)
+		{
+			short numberHexBit = strtol(number.substr(i - 1, 1).c_str(), nullptr, 16);
+
+			//count of big bits for one hex cipher
+			short bitForHexCount = 4 >> (bitRate - 1);
+
+			for (short j = bitForHexCount; j > 0; j--)
+			{
+				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] = (numberHexBit >> (4 - j)) & 1;
+			}
+		}
+	}
+
+	return bigNumber;
+}
+
+std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
+{
+	auto* hexNumber = new std::string;
+	short bigBitCount = 2048 / bitRate;
+
+	if (bitRate >= 4)
+	{
+		for (short i = 0; i < bigBitCount; i++)
+		{
+			if (bigNumber[i] != 0)
+			{
+				for (short j = 0; j < bitRate; j += 4)
+				{
+					short cipher = (bigNumber[i] >> ((bitRate - 4) - j)) & 15;
+
+					if (cipher > 9)
+					{
+						cipher += 55;
+					}
+					else
+					{
+						cipher += 48;
+					}
+
+					*hexNumber += static_cast<char>(cipher);
+				}
+			}
+		}
+	}
+
+	short zeroCount = 0;
+
+	for (short i = 0; i < bitRate / 4; i++)
+	{
+		if ((*hexNumber)[i] == '0')
+		{
+			zeroCount++;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	(*hexNumber).erase(0, zeroCount);
+
+	return hexNumber;
+}
+
 unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, short bitRate)
 {
 	unsigned int module = 0;
@@ -15,16 +116,30 @@ unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, 
 
 	for (short i = bigBitCount - 1; i >= 0; i--)
 	{
-		unsigned long long summ = carry;
-		summ += numberA[i];
-		summ += numberB[i];
+		unsigned long long summ = static_cast<unsigned long long>(numberA[i]) + numberB[i] + carry;
 
 		numberC[i] = summ & module;
-		
+
 		carry = summ >> bitRate;
 	}
 
-	numberC[0] = carry;
+	if (numberC[0] == 0)
+	{
+		numberC[0] = carry;
+	}
+	else if (numberC[0] != 0 && carry != 0)
+	{
+		auto* temp = new unsigned int[bigBitCount + 1];
+
+		for (short i = bigBitCount - 1; i >= 0; i--)
+		{
+			temp[i + 1] = numberC[i];
+		}
+		delete numberC;
+
+		numberC = temp;
+		numberC[0] = carry;
+	}
 	
 	return numberC;
 }
@@ -52,114 +167,51 @@ unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, 
 		else
 		{
 			numberC[i] = module + substraction;
+			borrow = 1;
 		}
-
-		/*std::cout << i << ": " << numberC[i] << std::endl;*/
 	}
 
 	if (borrow != 0)
 	{
-		std::fill(&numberC[0], &numberC[bigBitCount - 1], 0);
+		std::fill(&numberC[0], &numberC[bigBitCount], 0);
 	}
 
 	return numberC;
 }
 
-unsigned int* toBigIntConverting(std::string& number, short bitRate)
+unsigned int* LongMul(const unsigned int* numberA, const unsigned int* numberB, short bitRate)
 {
+	unsigned long long module = static_cast<unsigned long long>(1) << bitRate;
+
 	short bigBitCount = 2048 / bitRate;
-	auto* bigNumber = new unsigned int[bigBitCount];
-	std::fill(&bigNumber[0], &bigNumber[bigBitCount - 1], 0);
-		
-	short numberSize = number.length();
+	auto* numberC = new unsigned int[bigBitCount];
+	std::fill(&numberC[0], &numberC[bigBitCount], 0);
 
-	if (bitRate >= 4)
+	for (short i = bigBitCount - 1; i >= 32; i--)
 	{
-		short hexBitCount = (bitRate / 4);
+		unsigned long long carry = 0;
+		auto* intermediateMul = new unsigned int[bigBitCount];
+		std::fill(&intermediateMul[0], &intermediateMul[bigBitCount], 0);
 
-		if (numberSize % hexBitCount != 0)
+		for (short j = 63; j >= 32; j--)
 		{
-			std::string nullStr;
+			unsigned long long temp = static_cast<unsigned long long>(numberA[j]) * static_cast<unsigned long long>(numberB[i]) + carry;
+			intermediateMul[j - (63 - i)] = temp & (module - 1);
+			carry = temp >> bitRate;
 
-			for (int i = bitRate - (numberSize % hexBitCount); i > 0; i--)
+			//Закостилено для випадку, коли на вхід подається 1024 бітне число
+			if (j == 32)
 			{
-				nullStr += "0";
-				numberSize++;
-			}
-
-			number = nullStr + number;
-		}
-		
-		int numberBigBitCount = numberSize / hexBitCount;
-		
-		for (int i = numberBigBitCount; i > 0; i--)
-		{
-			bigNumber[bigBitCount - 1 - (numberBigBitCount - i)] =
-				strtoul(number.substr((i * hexBitCount) - hexBitCount, hexBitCount).c_str(), nullptr, 16);
-		}
-	}
-	else
-	{
-		for (int i = numberSize; i > 0; i--)
-		{
-			short numberHexBit = strtol(number.substr(i - 1, 1).c_str(), nullptr, 16);
-
-			//count of big bits for one hex cipher
-			short bitForHexCount = 4 >> (bitRate - 1);
-			
-			for (short j = bitForHexCount; j > 0; j--)
-			{
-				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] = (numberHexBit >> (4 - j)) & 1;
-			}				
-		}
-	}
-
-	return bigNumber;
-}
-
-std::string* toHexConverting(unsigned int* bigNumber, short bitRate)
-{
-	auto* hexNumber = new std::string;
-	short bigBitCount = 2048 / bitRate;
-	
-	if (bitRate >= 4)
-	{
-		for (short i = 0; i < bigBitCount; i++)
-		{
-			if (bigNumber[i] != 0)
-			{
-				for (short j = 0; j < bitRate; j += 4)
-				{
-					short cipher = (bigNumber[i] >> ((bitRate - 4) - j)) & 15;
-
-					if (cipher > 9)
-					{
-						cipher += 55;
-					}
-					else
-					{
-						cipher += 48;
-					}
-					
-					*hexNumber += static_cast<char>(cipher);
-				}
+				intermediateMul[j - (63 - i) - 1] = carry;
 			}
 		}
+
+		numberC = LongAdd(numberC, intermediateMul, bitRate);
+
+		delete intermediateMul;
 	}
 
-	short zeroCount = 0;
-
-	for (short i = 0; i < bitRate / 4; i++)
-	{
-		if ((*hexNumber)[i] == '0')
-		{
-			zeroCount++;
-		}
-	}
-	
-	(*hexNumber).erase(0, zeroCount);
-	
-	return hexNumber;
+	return numberC;
 }
 
 int main()
@@ -185,6 +237,10 @@ int main()
 	std::cout << "Result of substraction: ";
 	unsigned int* substraction = LongSub(numberA, numberB, bitRate);
 	std::cout << *toHexConverting(substraction, bitRate) << std::endl;
+
+	std::cout << "Result of multiplication: ";
+	unsigned int* multiplication = LongMul(numberA, numberB, bitRate);
+	std::cout << *toHexConverting(multiplication, bitRate) << std::endl;
 
 	return 0;
 }
