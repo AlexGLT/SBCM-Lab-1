@@ -1,25 +1,69 @@
-﻿#include <iostream> 
-#include <algorithm>
+﻿#include <iostream>
+#include <climits>
 #include <cmath>
 #include <string>
+#include <vector>
 
-unsigned int* toBigIntConverting(std::string& number, short bitRate)
+
+// Код для виводу вмісту масиву
+
+// 	std::cout << "Whole part: " << std::endl;
+// 
+// 	std::cout << "|";
+// 
+// 	for (int i = 0; i < wholePartBitLength; i++)
+// 	{
+// 		std::cout << optimizedWholePart[i] << "|";
+// 	}
+// 
+// 	std::cout << std::endl;
+
+
+unsigned int* ZeroEraser(unsigned int* number, long long& numberSize)
 {
-	unsigned long long bigBitCount = 2048 / bitRate;
-	auto* bigNumber = new unsigned int[bigBitCount];
-	std::fill(&bigNumber[0], &bigNumber[bigBitCount], 0);
+	unsigned int zeroNumber = 0;
 
-	short numberSize = number.length();
+	for (int i = 0; i < numberSize; i++)
+	{
+		if (number[i] == 0)
+		{
+			zeroNumber++;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (zeroNumber == 0)
+	{
+		return number;
+	}
+	else
+	{
+		auto* optimizedNumber = new unsigned int[numberSize - zeroNumber];
+		std::copy(number + zeroNumber, number + numberSize, optimizedNumber);
+
+		numberSize -= zeroNumber;
+
+		return optimizedNumber;
+	}
+}
+
+unsigned int* toBigIntConverting(std::string &number, const int &bitRate, long long &bigNumSize)
+{
+	unsigned int* bigNumber;
+	int numberSize = number.length();
 
 	if (bitRate >= 4)
 	{
-		short hexBitCount = (bitRate / 4);
+		int hexBitCount = (bitRate / 4);
 
 		if (numberSize % hexBitCount != 0)
 		{
 			std::string nullStr;
 
-			for (int i = bitRate - (numberSize % hexBitCount); i > 0; i--)
+			for (int i = hexBitCount - (numberSize % hexBitCount); i > 0; i--)
 			{
 				nullStr += "0";
 				numberSize++;
@@ -28,95 +72,89 @@ unsigned int* toBigIntConverting(std::string& number, short bitRate)
 			number = nullStr + number;
 		}
 
-		int numberBigBitCount = numberSize / hexBitCount;
+		int bigBitCount = numberSize / hexBitCount;
 
-		for (int i = numberBigBitCount; i > 0; i--)
+		bigNumber = new unsigned int[bigBitCount];
+
+		for (int i = bigBitCount - 1; i >= 0; i--)
 		{
-			bigNumber[bigBitCount - 1 - (numberBigBitCount - i)] =
-				strtoul(number.substr((i * hexBitCount) - hexBitCount, hexBitCount).c_str(), nullptr, 16);
+			bigNumber[i] = strtoul(number.substr(i * hexBitCount, hexBitCount).c_str(), nullptr, 16);
 		}
+
+		bigNumSize = bigBitCount;
 	}
 	else
 	{
-		for (int i = numberSize; i > 0; i--)
+		//count of big bits for one hex cipher
+		int bitForHexCount = (4 >> (bitRate - 1));
+
+		bigNumSize = numberSize * bitForHexCount;
+
+		bigNumber = new unsigned int[bigNumSize];
+
+		for (int i = numberSize - 1; i >= 0; i--)
 		{
-			short numberHexBit = strtol(number.substr(i - 1, 1).c_str(), nullptr, 16);
+			int numberHexBit = strtoul(number.substr(i, 1).c_str(), nullptr, 16);
 
-			//count of big bits for one hex cipher
-			short bitForHexCount = 4 >> (bitRate - 1);
-
-			for (short j = bitForHexCount; j > 0; j--)
+			for (int j = bitForHexCount - 1; j >= 0; j--)
 			{
-				bigNumber[(bigBitCount - (numberSize - (i - 1)) * bitForHexCount) - 1 + j] = (numberHexBit >> (4 - j)) & 1;
+				bigNumber[i * bitForHexCount + j] = (numberHexBit >> (3 - j)) & 1;
 			}
 		}
+
+		bigNumber = ZeroEraser(bigNumber, bigNumSize);
 	}
 
 	return bigNumber;
 }
 
-std::string* toHexConverting(unsigned int* bigNumber, short bitRate, unsigned long long bitLength = 2048)
+std::string* toHexConverting(unsigned int* bigNumber, int bitRate, long long &bigNumSize)
 {
 	auto* hexNumber = new std::string;
-	unsigned long long bigBitCount = bitLength / bitRate;
 
-	bool headNull = true;
-
-	if (bitRate >= 4)
+	for (long long i = 0; i < bigNumSize; i++)
 	{
-		for (long long i = 0; i < bigBitCount; i++)
+		int binSumm = 0;
+		std::vector<int> smallNumber;
+
+		if (bitRate >= 4)
 		{
-			if (bigNumber[i] != 0 || !headNull)
+			for (int j = 0; j < bitRate; j += 4)
 			{
-				headNull == false;
-
-				for (short j = 0; j < bitRate; j += 4)
-				{
-					short cipher = (bigNumber[i] >> ((bitRate - 4) - j)) & 15;
-
-					if (cipher > 9)
-					{
-						cipher += 55;
-					}
-					else
-					{
-						cipher += 48;
-					}
-
-					*hexNumber += static_cast<char>(cipher);
-				}
+				smallNumber.push_back((bigNumber[i] >> ((bitRate - 4) - j)) & 15);
 			}
 		}
-	}
-	else
-	{
-		short summ = 0;
-
-		for (long long i = 0; i < bigBitCount; i++)
+		else
 		{
-			summ += bigNumber[i] << 3 - (i % 4); //рахуємо hex число
-
-			if ((i + 1) % 4 == 0)
+			for (int j = 0; j < 4; j++)
 			{
-				if (summ != 0 || !headNull)
-				{
-					headNull = false;
-
-					if (summ > 9)
-					{
-						summ += 55;
-					}
-					else
-					{
-						summ += 48;
-					}
-
-					*hexNumber += static_cast<char>(summ);
-				}
-
-				summ = 0;
+				binSumm += bigNumber[i + j] << (3 - j);
 			}
+
+
+			// Перескочити 4 значення масиву, але добавляємо 3, оскільки в ітераторі вже є i++
+			i += 3;
+
+			smallNumber.push_back(binSumm);
 		}
+
+		for (int j = 0; j < smallNumber.size(); j++)
+		{
+			int cipher = smallNumber[j];
+
+			if (cipher > 9)
+			{
+				cipher += 55;
+			}
+			else
+			{
+				cipher += 48;
+			}
+
+			*hexNumber += static_cast<char>(cipher);
+		}
+
+		smallNumber.clear();
 	}
 
 	short zeroCount = 0;
@@ -143,11 +181,12 @@ std::string* toHexConverting(unsigned int* bigNumber, short bitRate, unsigned lo
 	return hexNumber;
 }
 
-bool LongComp(const unsigned int* numberA, const unsigned int* numberB, bool severe, short bitRate, unsigned long long bitLength = 2048)
+bool LongComp(const unsigned int* numberA, const unsigned int* numberB, const long long &numberASize, const long long &numberBSize, bool severe)
 {
-	unsigned long long bigBitCount = bitLength / bitRate;
+	if (numberASize < numberBSize) return false;
+	if (numberASize > numberBSize) return true;
 
-	for (long long i = 0; i < bigBitCount; i++)
+	for (long long i = 0; i < numberASize; i++)
 	{
 		if (numberA[i] > numberB[i])
 		{
@@ -169,64 +208,100 @@ bool LongComp(const unsigned int* numberA, const unsigned int* numberB, bool sev
 
 		case true: return false;
 	}
-	;
 }
 
-unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, short bitRate, unsigned long long bitLength = 2048)
+unsigned int* LongAdd(const unsigned int *numberA, const unsigned int *numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize, bool mul = false)
 {
-	unsigned int module = 0;
-	module--;
+	long long smallerNumberSize;
+	const unsigned int* smallerNumber;
+	const unsigned int* biggerNumber;
 
-	unsigned long long bigBitCount = bitLength / bitRate;
-	
-	auto* numberC = new unsigned int[bigBitCount];
-
-	short carry = 0;
-
-	for (long long i = bigBitCount - 1; i >= 0; i--)
+	if (numberASize >= numberBSize)
 	{
-		unsigned long long summ = static_cast<unsigned long long>(numberA[i]) + numberB[i] + carry;
+		numberCSize = numberASize + 1;
+		smallerNumberSize = numberBSize;
+		
+		biggerNumber = numberA;
+		smallerNumber = numberB;
+	}
+	else
+	{
+		numberCSize = numberBSize + 1;
+		smallerNumberSize = numberASize;
 
-		numberC[i] = summ & module;
+		biggerNumber = numberB;
+		smallerNumber = numberA;
+	}
+
+	unsigned long long module = (ULLONG_MAX >> (64 - bitRate));
+	
+	auto* numberC = new unsigned int[numberCSize];
+
+	unsigned int carry = 0;
+
+	int difference = abs(numberASize - numberBSize);
+
+	for (long long i = smallerNumberSize - 1; i >= 0; i--)
+	{
+		unsigned long long summ = static_cast<unsigned long long>(smallerNumber[i]) + biggerNumber[i + difference] + carry;
+
+		numberC[i + difference + 1] = summ & module;
+		carry = summ >> bitRate;
+	}
+	for (long long i = difference - 1; i >= 0; i--)
+	{
+		unsigned long long summ = static_cast<unsigned long long>(biggerNumber[i]) +  carry;
+
+		numberC[i + 1] = summ & module;
 
 		carry = summ >> bitRate;
 	}
 
-	if (numberC[0] == 0)
-	{
-		numberC[0] = carry;
-	}
-	else if (numberC[0] != 0 && carry != 0)
-	{
-		auto* temp = new unsigned int[bigBitCount + 1];
+	numberC[0] = carry;
 
-		for (long long i = bigBitCount - 1; i >= 0; i--)
-		{
-			temp[i + 1] = numberC[i];
-		}
-		delete[] numberC;
-
-		numberC = temp;
-		numberC[0] = carry;
-	}
+	auto* optimizedNumberC = ZeroEraser(numberC, numberCSize);
 	
-	return numberC;
+	if (optimizedNumberC != numberC && !mul)
+	{
+		delete[] numberC;
+	}
+
+	return optimizedNumberC;
 }
 
-unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, short bitRate)
+unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize, bool div = false)
 {
-	unsigned long long module = static_cast<unsigned long long>(1) << bitRate;
+	long long module = static_cast<unsigned long long>(1) << bitRate;
 
-	unsigned long long bigBitCount = 2048 / bitRate;
-	auto* numberC = new unsigned int[bigBitCount];
-
-	short borrow = 0;
-
-	for (long long i = bigBitCount - 1; i >= 0; i--)
+	if (numberASize < numberBSize)
 	{
-		long long substraction = numberA[i];
-		substraction -= numberB[i];
-		substraction -= borrow;
+		return new unsigned int[1]{ 0 };
+	}
+
+	numberCSize = numberASize;
+
+	auto* numberC = new unsigned int[numberCSize];
+	int borrow = 0;
+
+	int difference = abs(numberASize - numberBSize);
+	for (long long i = numberBSize - 1; i >= 0; i--)
+	{
+		long long substraction = static_cast<long long>(numberA[i + difference]) - static_cast<long long>(numberB[i]) - borrow;
+
+		if (substraction >= 0)
+		{
+			numberC[i + difference] = substraction;
+			borrow = 0;
+		}
+		else
+		{
+			numberC[i + difference] = module + substraction;
+			borrow = 1;
+		}
+	}
+	for (long long i = difference - 1; i >= 0; i--)
+	{
+		long long substraction = numberA[i] - borrow;
 
 		if (substraction >= 0)
 		{
@@ -235,7 +310,7 @@ unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, 
 		}
 		else
 		{
-			
+			std::cout << module + substraction << std::endl;
 			numberC[i] = module + substraction;
 			borrow = 1;
 		}
@@ -243,198 +318,173 @@ unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, 
 
 	if (borrow != 0)
 	{
-		std::fill(&numberC[0], &numberC[bigBitCount], 0);
+		return new unsigned int[1]{ 0 };
 	}
 
-	return numberC;
+	unsigned int* optimizedNumberC;
+
+	if (bitRate >= 4)
+	{
+		optimizedNumberC = ZeroEraser(numberC, numberCSize);
+
+		if (optimizedNumberC != numberC && !div)
+		{
+			delete[] numberC;
+		}
+	}
+	else
+	{
+		optimizedNumberC = numberC;
+	}
+
+	return optimizedNumberC;
 }
 
-unsigned int* LongMul(const unsigned int* numberA, const unsigned int* numberB, short bitRate, unsigned long long bitLength = 2048)
+unsigned int* LongMul(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize)
 {
-	unsigned long long module = static_cast<unsigned long long>(1) << bitRate;
+	unsigned long long module = (ULLONG_MAX >> (64 - bitRate));
+	
+	numberCSize = numberASize * numberBSize;
+	auto* numberC = new unsigned int[numberCSize];
+	std::fill(&numberC[0], &numberC[numberCSize], 0);
 
-	unsigned long long bigBitCount = bitLength / bitRate;
-	auto* numberC = new unsigned int[bigBitCount];
-	std::fill(&numberC[0], &numberC[bigBitCount], 0);
-
-	for (long long i = bigBitCount - 1; i >= bigBitCount / 2; i--)
+	for (long long i = numberBSize - 1; i >= 0; i--)
 	{
 		unsigned long long carry = 0;
-		auto* intermediateMul = new unsigned int[bigBitCount];
-		std::fill(&intermediateMul[0], &intermediateMul[bigBitCount], 0);
+		long long interMulNumberSize = numberASize + (numberBSize - 1 - i) + 1;
+		auto* intermediateMul = new unsigned int[interMulNumberSize];
+		std::fill(&intermediateMul[0], &intermediateMul[numberASize + (numberBSize - 1 - i) + 1], 0);
 
-		for (long long j = bigBitCount - 1; j >= bigBitCount / 2; j--)
+		for (long long j = numberASize - 1; j >= 0; j--)
 		{
 			unsigned long long temp = static_cast<unsigned long long>(numberA[j]) * numberB[i] + carry;
-			intermediateMul[j - (bigBitCount - 1 - i)] = temp & (module - 1);
+			intermediateMul[j + 1] = temp & module;
 			carry = temp >> bitRate;
 
-			if (j == bigBitCount / 2)
+			if (j == 0)
 			{
-				intermediateMul[j - (bigBitCount - 1 - i) - 1] = carry;
+				intermediateMul[j] = carry;
 			}
 		}
 
-		numberC = LongAdd(numberC, intermediateMul, bitRate, bigBitCount * 32);
-
-		delete[] intermediateMul;
+		numberC = LongAdd(numberC, intermediateMul, bitRate, numberCSize, interMulNumberSize, numberCSize, true);
+		
+		if (numberC != intermediateMul)
+		{
+			delete[] intermediateMul;
+		}
 	}
 
 	return numberC;
 }
 
-unsigned short BitLength(const unsigned int* number, short bitRate)
+unsigned int* LongShiftBitsToHigh(const unsigned int* number, unsigned long long shift, const long long& numberSize, long long& shiftedNumberSize)
 {
-	unsigned long long bigBitCount = 2048 / bitRate;
+	shiftedNumberSize = numberSize + shift;
 
-	unsigned short bitLength = 0;
+	auto* highNumber = new unsigned int[shiftedNumberSize];
 
-	for (long long i = 0; i < bigBitCount; i++)
+	std::fill(&highNumber[0], &highNumber[shiftedNumberSize], 0);
+
+	for (long long i = 0; i < numberSize; i++)
 	{
-		if (number[i] == 0)
-		{
-			continue;
-		}
-		else
-		{
-			bitLength = 2048 - i;
-			break;
-		}
+		highNumber[i] = number[i];
 	}
 
-	return bitLength;
+	auto* optimizedNumberC = ZeroEraser(highNumber, shiftedNumberSize);
+
+	return optimizedNumberC;
 }
 
-unsigned int* LongShiftBitsToHigh(const unsigned int* number, unsigned short shift, short bitRate)
+unsigned int* SmallFix(const unsigned int* number, long long& numberSize)
 {
-	unsigned long long bigBitCount = 2048 / bitRate;
+	int fix = 4 - (numberSize % 4);
 
-	unsigned short bitLength = 0;
+	auto* fixNumber = new unsigned int[numberSize + fix];
+	std::fill(&fixNumber[0], &fixNumber[fix], 0);
+	std::copy(number, number + numberSize, fixNumber + fix);
 
-	auto* highNumber = new unsigned int[bigBitCount];
+	numberSize += fix;
 
-	std::fill(&highNumber[0], &highNumber[bigBitCount], 0);
-
-	for (long long i = shift; i < bigBitCount; i++)
-	{
-		highNumber[i - shift] = number[i];
-	}
-
-	return highNumber;
+	return fixNumber;
 }
 
-unsigned int** LongDiv(std::string* dividend, std::string* divisor, short bitRate)
+unsigned int** LongDiv(std::string& dividend, std::string& divisor, int bitRate, long long& wholePartBitLength, long long& remainderBitLength)
 {
-	unsigned long long bigBitCount = 2048;
+	long long dividendBitLength, divisorBitLength;
 
-	unsigned int* numberA = toBigIntConverting(*dividend, 1);
-	unsigned int* numberB = toBigIntConverting(*divisor, 1);
-
-	unsigned short divisorBitLength = BitLength(numberB, 1);
+	unsigned int* numberA = toBigIntConverting(dividend, 1, dividendBitLength);
+	unsigned int* numberB = toBigIntConverting(divisor, 1, divisorBitLength);
 
 	auto* divisionRemainder = numberA;
+	remainderBitLength = dividendBitLength;
 
-	auto* wholePart = new unsigned int[bigBitCount];
-	std::fill(&wholePart[0], &wholePart[bigBitCount], 0);
+	wholePartBitLength = dividendBitLength;
+	auto* wholePart = new unsigned int[wholePartBitLength];
+	std::fill(&wholePart[0], &wholePart[dividendBitLength], 0);
 
-	while (LongComp(divisionRemainder, numberB, false , 1))
+	while (LongComp(divisionRemainder, numberB, remainderBitLength, divisorBitLength, false))
 	{
-		unsigned short remainderBitLength = BitLength(divisionRemainder, 1);
+		long long iterateLength = remainderBitLength;
 
-		unsigned int* maxDivisor = LongShiftBitsToHigh(numberB, remainderBitLength - divisorBitLength, 1);
+		long long maxDivisorBitLength;
+		unsigned int* maxDivisor = LongShiftBitsToHigh(numberB, (iterateLength - divisorBitLength), divisorBitLength, maxDivisorBitLength);
 
-		if (LongComp(maxDivisor, divisionRemainder, true, 1))
+		if (LongComp(maxDivisor, divisionRemainder, maxDivisorBitLength, remainderBitLength, true))
 		{
-			remainderBitLength -= 1;
+			iterateLength -= 1;
 
-			maxDivisor = LongShiftBitsToHigh(numberB, (remainderBitLength - divisorBitLength), 1);
+			maxDivisor = LongShiftBitsToHigh(numberB, (iterateLength - divisorBitLength), divisorBitLength, maxDivisorBitLength);
 		}
-		
-		divisionRemainder = LongSub(divisionRemainder, maxDivisor, 1);
 
-		wholePart[2047 - (remainderBitLength - divisorBitLength)] = 1;
+		divisionRemainder = LongSub(divisionRemainder, maxDivisor, 1, remainderBitLength, maxDivisorBitLength, remainderBitLength, true);
+
+ 		divisionRemainder = ZeroEraser(divisionRemainder, remainderBitLength);
+
+		wholePart[(wholePartBitLength - 1) - (iterateLength - divisorBitLength)] = 1;
 	}
 
-	unsigned int** answer = new unsigned int* [2]{ wholePart, divisionRemainder };
+	auto* optimizedWholePart = ZeroEraser(wholePart, wholePartBitLength);
+
+	if (wholePartBitLength % 4 != 0)
+	{
+		optimizedWholePart = SmallFix(optimizedWholePart, wholePartBitLength);
+	}
+
+	if (remainderBitLength % 4 != 0)
+	{
+		divisionRemainder = SmallFix(divisionRemainder, remainderBitLength);
+	}
+
+	unsigned int** answer = new unsigned int* [2]{ optimizedWholePart, divisionRemainder };
 
 	return answer;
 }
 
-unsigned int* LongPower(const unsigned int* numberA, std::string* numberB, short bitRate, unsigned long long &bigBitCountPower)
+unsigned int* LongPower(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBBitSize, long long& numberCSize)
 {
-	unsigned long long bigBitCount = 2048 / bitRate;
+	numberCSize = 1;
+	auto* numberC = new unsigned int[numberCSize]{1};
 
-	auto* bitNumberB = toBigIntConverting(*numberB, 1);
-
-	unsigned int numberBBitLength = BitLength(bitNumberB, 1);
-
-	auto* numberC = new unsigned int[bigBitCount];
-	std::fill(&numberC[0], &numberC[bigBitCount], 0);
-	numberC[bigBitCount - 1] = 1;
-
-	for (long long i = numberBBitLength - 1; i >= 0; i--)
+	for (long long i = 0; i < numberBBitSize; i++)
 	{
-		unsigned short corrector = 1;
-		unsigned short modifiedLength;
-
-		if (bitNumberB[2047 - i] == 1 && i != numberBBitLength - 1)
+		if (numberB[i] == 1)
 		{
-			corrector++;
+			numberC = LongMul(numberC, numberA, bitRate, numberCSize, numberASize, numberCSize);
 		}
 
-		bigBitCount *= (2 * corrector);
-
-		auto* temp = new unsigned int[bigBitCount];
-		
-		switch (corrector)
+		if (i != numberBBitSize - 1)
 		{
-		case 1:
-		{
-			modifiedLength = bigBitCount / 2;
-			std::fill(&temp[0], &temp[modifiedLength], 0);
-			std::copy(numberC, numberC + modifiedLength, temp + modifiedLength);
-		}
-			break;
-		case 2:
-		{
-			modifiedLength = bigBitCount * 3 / 4;
-			std::fill(&temp[0], &temp[modifiedLength], 0);
-			std::copy(numberC, numberC + bigBitCount / 4, temp + modifiedLength);
-		}
-			break;
-		}
-
-		//unsigned int* deleteTemp = temp;
-
-		if (bitNumberB[2047 - i] == 1)
-		{
-			auto* bigNumberA = new unsigned int[bigBitCount];
-			std::fill(&bigNumberA[0], &bigNumberA[bigBitCount - 2048 / bitRate], 0);
-			std::copy(numberA, numberA + 2048 / bitRate, bigNumberA + bigBitCount - 2048 / bitRate);
-
-			temp = LongMul(temp, bigNumberA, bitRate, bigBitCount * 32);
-
-			delete[] bigNumberA;
-		}
-
-		if (i != 0)
-		{
-			temp = LongMul(temp, temp, bitRate, bigBitCount * 32);
-		}
-
-		//delete[] deleteTemp;
-
-		numberC = temp;
+			numberC = LongMul(numberC, numberC, bitRate, numberCSize, numberCSize, numberCSize);
+		}	
 	}
-
-	bigBitCountPower = bigBitCount;
 
 	return numberC;
 }
-
+	
 int main()
 {
-	short bitRate;
+	int bitRate;
 	std::string number;
 
 	std::cout << "Input numbers bit rate: ";
@@ -442,47 +492,57 @@ int main()
 
 	std::cout << "Input number A: ";
 	std::cin >> number;
-	unsigned int* numberA = toBigIntConverting(number, bitRate);
-
+	long long numberASize;
 	std::string dividend(number);
+	
+	unsigned int* numberA = toBigIntConverting(number, bitRate, numberASize);
 
 	std::cout << "Input number B: ";
 	std::cin >> number;
-	unsigned int* numberB = toBigIntConverting(number, bitRate);
-
+	long long numberBSize;
 	std::string divisor(number);
+	
+	unsigned int* numberB = toBigIntConverting(number, bitRate, numberBSize);
 
 	std::cout << "Result of addition: ";
-	unsigned int* addition = LongAdd(numberA, numberB, bitRate);
-	std::cout << *toHexConverting(addition, bitRate) << std::endl;
+	long long additionSize;
+	unsigned int* addition = LongAdd(numberA, numberB, bitRate, numberASize, numberBSize, additionSize);
+	std::cout << *toHexConverting(addition, bitRate, additionSize) << std::endl;
 
 	std::cout << "Result of substraction: ";
-	unsigned int* substraction = LongSub(numberA, numberB, bitRate);
-	std::cout << *toHexConverting(substraction, bitRate) << std::endl;
+	long long substractionSize;
+	unsigned int* substraction = LongSub(numberA, numberB, bitRate, numberASize, numberBSize, substractionSize);
+	std::cout << *toHexConverting(substraction, bitRate, substractionSize) << std::endl;
 
 	std::cout << "Result of multiplication: ";
-	unsigned int* multiplication = LongMul(numberA, numberB, bitRate);
-	std::cout << *toHexConverting(multiplication, bitRate) << std::endl;
+	long long multiplicationSize;
+	unsigned int* multiplication = LongMul(numberA, numberB, bitRate, numberASize, numberBSize, multiplicationSize);
+	std::cout << *toHexConverting(multiplication, bitRate, multiplicationSize) << std::endl;
 
-	unsigned int** divisionResult = LongDiv(&dividend, &divisor, bitRate);
+	long long wholePartSize, remainderSize;
+	unsigned int** divisionResult = LongDiv(dividend, divisor, bitRate, wholePartSize, remainderSize);
 	unsigned int* division = divisionResult[0];
 	unsigned int* remainder = divisionResult[1];
 
 	std::cout << "Whole part from division: ";
-	std::cout << *toHexConverting(division, 1) << std::endl;
+	std::cout << *toHexConverting(division, 1, wholePartSize) << std::endl;
 	std::cout << "Remainder from division: ";
-	std::cout << *toHexConverting(remainder, 1) << std::endl;
-
-	unsigned long long bitBigBitCount;
+	std::cout << *toHexConverting(remainder, 1, remainderSize) << std::endl;
+	
 	std::cout << "Do you want to A^B?" << std::endl;
 	char choice;
 	std::cin >> choice;
 
 	if (choice == 'y')
 	{
-		std::cout << "\nResult of power: ";
-		unsigned int* power = LongPower(numberA, &divisor, bitRate, bitBigBitCount);
-		std::cout << *toHexConverting(power, bitRate, bitBigBitCount * 32) << std::endl;
+		std::cout << "Result of power: ";
+		long long powerSize;
+
+		long long numberBBitSize;
+		unsigned int* bitNumberB = toBigIntConverting(number, 1, numberBBitSize);
+
+		unsigned int* power = LongPower(numberA, bitNumberB, bitRate, numberASize, numberBBitSize, powerSize);
+		std::cout << *toHexConverting(power, bitRate, powerSize) << std::endl;
 	}
 
 	return 0;
