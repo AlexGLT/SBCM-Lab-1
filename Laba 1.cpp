@@ -545,5 +545,59 @@ int main()
 		std::cout << *toHexConverting(power, bitRate, powerSize) << std::endl;
 	}
 
+	std::cout << "-------TESTS------" << std::endl;
+
+	std::cout << "1. Distributivity" << std::endl;
+	std::cout << "1.1. (A + B) * A = ";
+
+	long long firstPropertieSize;
+	
+	unsigned int* firstPropertie = LongMul(addition, numberA, bitRate, additionSize, numberASize, firstPropertieSize);
+	std::cout << *toHexConverting(firstPropertie, bitRate, firstPropertieSize) << std::endl;
+
+	std::cout << "1.2. A * (A + B) = ";
+
+	long long secondPropertieSize;
+
+	unsigned int* secondPropertie = LongMul(numberA, addition, bitRate, numberASize, additionSize, firstPropertieSize);
+	std::cout << *toHexConverting(secondPropertie, bitRate, secondPropertieSize) << std::endl;
+
+	std::cout << "1.3. A * A + A * B = ";
+
+	long long thirdPropertieSize;
+	long long firstMultiplicationSize;
+	
+	unsigned int* firstMultiplication = LongMul(numberA, numberA, bitRate, numberASize, numberASize, firstMultiplicationSize);
+	unsigned int* thirdPropertie = LongAdd(firstMultiplication, multiplication, bitRate, firstMultiplicationSize, multiplicationSize, thirdPropertieSize);
+	std::cout << *toHexConverting(thirdPropertie, bitRate, thirdPropertieSize) << std::endl;
+
+	std::cout << "2. Equivalence of multiplication by addition" << std::endl;
+
+	int randomN = rand() % 100 + 2;
+	std::cout << "n = " << randomN << std::endl;
+	std::string s = std::to_string(randomN);
+	randomN = strtoul(s.substr(0, s.length()).c_str(), nullptr, 16);
+
+
+	long long randomNSize;
+	unsigned int* bigN = toBigIntConverting(s, bitRate, randomNSize);
+
+	std::cout << "2.1. n * A = ";
+	
+	long long nAmulSize;
+	unsigned int* nAMul = LongMul(numberA, bigN, bitRate, numberASize, randomNSize, nAmulSize);
+	std::cout << *toHexConverting(nAMul, bitRate, nAmulSize) << std::endl;
+
+	long long bigSummSize = numberASize;
+	unsigned int* bigSumm = numberA;
+
+	for (int i = 1; i <= randomN - 1; i++)
+	{
+		bigSumm = LongAdd(bigSumm, numberA, bitRate, bigSummSize, numberASize, bigSummSize, true);
+	}
+
+	std::cout << "2.2. A + A + ... + A = ";
+	std::cout << *toHexConverting(bigSumm, bitRate, bigSummSize) << std::endl;
+
 	return 0;
 }
