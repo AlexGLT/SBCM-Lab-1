@@ -18,34 +18,17 @@ struct bigInteger
 
 
 void freeMemory(int selfReculc, bigInteger* numberA, bigInteger* numberB = nullptr);
-//unsigned int* ZeroEraser(unsigned int* number, long long& numberSize);
 void ZeroEraser(bigInteger* number);
-//unsigned int* toBigIntConverting(std::string& number, const int& bitRate, long long& bigNumSize);
-bigInteger* toBigIntConverting(std::string number, const int& bitRate);
-
-//std::string* toHexConverting(unsigned int* bigNumber, int bitRate, long long& bigNumSize);
-void toHexConverting(bigInteger* bigNumber, int bitRate);
-
-//bool LongComp(const unsigned int* numberA, const unsigned int* numberB, const long long& numberASize, const long long& numberBSize, bool severe);
-bool LongComp(bigInteger* numberA, bigInteger* numberB, bool severe);
-
-//unsigned int* LongAdd(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize, bool mul = false);
-bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
-
-//unsigned int* LongSub(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize, bool div = false);
-bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
-
-// unsigned int* LongMul(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBSize, long long& numberCSize);
-bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
-
-// unsigned int* LongShiftBitsToHigh(const unsigned int* number, unsigned long long shift, const long long& numberSize, long long& shiftedNumberSize);
-bigInteger* LongShiftBitsToHigh(bigInteger* number, unsigned long long shift);
-
-// unsigned int* SmallFix(const unsigned int* number, long long& numberSize);
 void SmallFix(bigInteger* number);
 
-// unsigned int** LongDiv(std::string& dividend, std::string& divisor, int bitRate, long long& wholePartBitLength, long long& remainderBitLength);
-bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate);
+bigInteger* toBigIntConverting(std::string number, const int& bitRate);
+void toHexConverting(bigInteger* bigNumber, int bitRate);
 
-// unsigned int* LongPower(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBBitSize, long long& numberCSize);
+bool LongComp(bigInteger* numberA, bigInteger* numberB, bool severe);
+bigInteger* LongShiftBitsToHigh(bigInteger* number, unsigned long long shift);
+
+bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
+bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
+bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text = true, int selfReculc = 0);
+bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate);
 bigInteger* LongPower(bigInteger* numberA, bigInteger* numberB, int bitRate);
