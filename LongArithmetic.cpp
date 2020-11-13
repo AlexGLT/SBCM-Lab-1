@@ -27,6 +27,12 @@ bigInteger::bigInteger(const long long& size, const std::string& hexString)
 	value = new unsigned int[size];
 }
 
+bigInteger::~bigInteger()
+{
+	delete[] value;
+	value = NULL;
+}
+
 // For debugging
 void showBigInteger(bigInteger* number, std::string numberName)
 {
@@ -42,7 +48,28 @@ void showBigInteger(bigInteger* number, std::string numberName)
 	std::cout << std::endl;
 }
 
-bigInteger* ZeroEraser(bigInteger* number)
+void freeMemory(int selfReculc, bigInteger* numberA, bigInteger* numberB)
+{
+	switch (selfReculc)
+	{
+	case 1:
+	{
+		delete numberA;
+		numberA = NULL;
+	}; break;
+
+	case 2:
+	{
+		delete numberB;
+		numberB = NULL;
+	}; break;
+
+	default:
+		break;
+	}
+}
+
+void ZeroEraser(bigInteger* number)
 {
 	unsigned int zeroCount = 0;
 
@@ -58,22 +85,25 @@ bigInteger* ZeroEraser(bigInteger* number)
 		}
 	}
 
-	if (zeroCount == 0)
+	if (zeroCount != 0)
 	{
-		return number;
-	}
-	else
-	{
-		auto* optimizedNumber = new bigInteger(number->size - zeroCount);
-		std::copy(number->value + zeroCount, number->value + number->size, optimizedNumber->value);
+		long long newSize = number->size - zeroCount;
 
-		return optimizedNumber;
+		auto* optimizedNumberValue = new unsigned int[newSize];
+		std::fill(&optimizedNumberValue[0], &optimizedNumberValue[newSize], 0);
+		std::copy(number->value + zeroCount, number->value + number->size, optimizedNumberValue);
+		
+		delete[] number->value;
+		number->value = NULL;
+
+		number->size = newSize;
+		number->value = optimizedNumberValue;
 	}
 }
 
 bigInteger* toBigIntConverting(std::string number, const int& bitRate)
 {
-	int numberSize = number.length();
+	long long numberSize = number.length();
 
 	bigInteger* bigNumber = new bigInteger;
 
@@ -119,7 +149,7 @@ bigInteger* toBigIntConverting(std::string number, const int& bitRate)
 			}
 		}
 
-		bigNumber = ZeroEraser(bigNumber);
+		ZeroEraser(bigNumber);
 	}
 
 	return bigNumber;
@@ -223,9 +253,8 @@ bool LongComp(bigInteger* numberA, bigInteger* numberB, bool severe)
 	}
 }
 
-bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool optimization)
+bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
 {
-	long long smallerNumberSize;
 	bigInteger* smallerNumber;
 	bigInteger* biggerNumber;
 
@@ -234,7 +263,6 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	if (numberA->size >= numberB->size)
 	{
 		numberC = new bigInteger(numberA->size + 1);
-		smallerNumberSize = numberB->size;
 
 		biggerNumber = numberA;
 		smallerNumber = numberB;
@@ -242,7 +270,6 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	else
 	{
 		numberC = new bigInteger(numberB->size + 1);
-		smallerNumberSize = numberA->size;
 
 		biggerNumber = numberB;
 		smallerNumber = numberA;
@@ -254,7 +281,7 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	long long difference = abs(numberA->size - numberB->size);
 
-	for (long long i = smallerNumberSize - 1; i >= 0; i--)
+	for (long long i = smallerNumber->size - 1; i >= 0; i--)
 	{
 		unsigned long long sum = static_cast<unsigned long long>(biggerNumber->value[i + difference]) + static_cast<unsigned long long>(smallerNumber->value[i]) + carry;
 		numberC->value[i + difference + 1] = sum & module;
@@ -269,26 +296,19 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	numberC->value[0] = carry;
 
-	auto* optimizedNumberC = ZeroEraser(numberC);
+	ZeroEraser(numberC);
 
-	if ((optimizedNumberC != numberC) && optimization)
+	freeMemory(selfReculc, numberA, numberB);
+
+	if (text)
 	{
-		delete[] numberC->value;
-		numberC->value = NULL;
-		
-		delete numberC;
-		numberC = NULL;
+		toHexConverting(numberC, bitRate);
 	}
 
-	if (optimization)
-	{
-		toHexConverting(optimizedNumberC, bitRate);
-	}
-
-	return optimizedNumberC;
+	return numberC;
 }
 
-bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool optimization)
+bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
 {
 	unsigned long long module = static_cast<long long>(1) << bitRate;
 
@@ -305,7 +325,7 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	long long borrow = 0;
 
-	int difference = numberA->size - numberB->size;
+	long long difference = numberA->size - numberB->size;
 
 	for (long long i = numberB->size - 1; i >= 0; i--)
 	{
@@ -348,23 +368,12 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	if (bitRate >= 4)
 	{
-		auto* optimizedNumberC = new bigInteger;
-
-		optimizedNumberC = ZeroEraser(numberC);
-
-		if ((optimizedNumberC != numberC) && optimization)
-		{
-			delete[] numberC->value;
-			numberC->value = NULL;
-
-			delete numberC;
-			numberC = NULL;
-		}
-
-		numberC = optimizedNumberC;
+		ZeroEraser(numberC);
 	}
 
-	if (optimization)
+	freeMemory(selfReculc, numberA, numberB);
+
+	if (text)
 	{
 		toHexConverting(numberC, bitRate);
 	}
@@ -372,11 +381,11 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	return numberC;
 }
 
-bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate)
+bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
 {
 	unsigned long long module = ULLONG_MAX >> (64 - bitRate);
 
-	auto* numberC = new bigInteger(numberA->size * numberB->size);
+	auto* numberC = new bigInteger(numberA->size +	 numberB->size);
 	std::fill(&numberC->value[0], &numberC->value[numberC->size], 0);
 
 	for (long long i = numberB->size - 1; i >= 0; i--)
@@ -399,29 +408,17 @@ bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate)
 			}
 		}
 
-		auto* newNumberC = LongAdd(numberC, intermediateMul, bitRate, false);
+		numberC = LongAdd(numberC, intermediateMul, bitRate, false, 1);
 
-		if (newNumberC != numberC)
-		{
-			auto* temp = numberC;
-
-			numberC = newNumberC;
-
-			delete[] temp->value;
-			temp->value = NULL;
-
-			delete temp;
-			temp = NULL;
-		}
-
-		delete[] intermediateMul->value;
-		intermediateMul->value = NULL;
-
-		delete intermediateMul;
-		intermediateMul = NULL;
+		freeMemory(1, intermediateMul);
 	}
 
-	toHexConverting(numberC, bitRate);
+	freeMemory(selfReculc, numberA, numberB);
+
+	if (text)
+	{
+		toHexConverting(numberC, bitRate);
+	}
 
 	return numberC;
 }
@@ -436,16 +433,21 @@ bigInteger* LongShiftBitsToHigh(bigInteger* number, unsigned long long shift)
 	return highNumber;
 }
 
-bigInteger* SmallFix(bigInteger* number)
+void SmallFix(bigInteger* number)
 {
 	int fix = 4 - (number->size % 4);
 
-	auto* fixNumber = new bigInteger(number->size + fix);
+	long long newSize = number->size + fix;
+	auto* fixNumberValue = new unsigned int[newSize];
 
-	std::fill(&fixNumber->value[0], &fixNumber->value[fix], 0);
-	std::copy(number->value, number->value + number->size, fixNumber->value + fix);
+	std::fill(&fixNumberValue[0], &fixNumberValue[fix], 0);
+	std::copy(number->value, number->value + number->size, fixNumberValue + fix);
 
-	return fixNumber;
+	delete[] number->value;
+	number->value = NULL;
+
+	number->size = newSize;
+	number->value = fixNumberValue;
 }
 
 bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate)
@@ -467,99 +469,32 @@ bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate)
 
 		if (LongComp(maxBitDivisor, bitRemainder, true))
 		{
-			delete[] maxBitDivisor->value;
-			maxBitDivisor->value = NULL;
-
-			delete maxBitDivisor;
-			maxBitDivisor = NULL;
+			freeMemory(1, maxBitDivisor);
 
 			tempLength--;
 
 			maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
 		}
 
-		auto* newBitRemainder = LongSub(bitRemainder, maxBitDivisor, 1, false);
+		bitRemainder = LongSub(bitRemainder, maxBitDivisor, 1, false, 1);
 
-		if (newBitRemainder != bitRemainder)
-		{
-			auto* temp = bitRemainder;
+		freeMemory(1, maxBitDivisor);
 
-			bitRemainder = newBitRemainder;
-
-			delete[] temp->value;
-			temp->value = NULL;
-
-			delete temp;
-			temp = NULL;
-		}
-
-		auto* optimizedBitRemainder = ZeroEraser(bitRemainder);
-		
-		if (optimizedBitRemainder != bitRemainder)
-		{
-			auto* temp = bitRemainder;
-
-			bitRemainder = optimizedBitRemainder;
-
-			delete[] temp->value;
-			temp->value = NULL;
-
-			delete temp;
-			temp = NULL;
-		}
+		ZeroEraser(bitRemainder);
 
 		wholePart->value[(wholePart->size - 1) - (tempLength - bitDivisor->size)] = 1;
 	}
 
-	auto* optimizedWholePart = ZeroEraser(wholePart);
-
-	if (optimizedWholePart != wholePart)
-	{
-		auto* temp = wholePart;
-
-		wholePart = optimizedWholePart;
-
-		delete[] temp->value;
-		temp->value = NULL;
-
-		delete temp;
-		temp = NULL;
-	}
+	ZeroEraser(wholePart);
 
 	if (bitRemainder->size % 4 != 0)
 	{
-		auto* newBitRemainder = SmallFix(bitRemainder);
-
-		if (newBitRemainder != bitRemainder)
-		{
-			auto* temp = bitRemainder;
-
-			bitRemainder = newBitRemainder;
-
-			delete[] temp->value;
-			temp->value = NULL;
-
-			delete temp;
-			temp = NULL;
-		}
+		SmallFix(bitRemainder);
 	}
 	
 	if (wholePart->size % 4 != 0)
 	{
-		auto* optimizedWholePart = SmallFix(wholePart);
-
-		if (optimizedWholePart != wholePart)
-		{
-			auto* temp = wholePart;
-
-			wholePart = optimizedWholePart;
-
-			delete[] temp->value;
-			temp->value = NULL;
-
-			delete temp;
-			temp = NULL;
-		}
+		SmallFix(wholePart);
 	}
 
 	toHexConverting(wholePart, 1);
@@ -570,7 +505,6 @@ bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate)
 	return answer;
 }
 
-//unsigned int* LongPower(const unsigned int* numberA, const unsigned int* numberB, int bitRate, long long numberASize, long long numberBBitSize, long long& numberCSize)
 bigInteger* LongPower(bigInteger* numberA, bigInteger* numberB, int bitRate)
 {
 	auto* bitNumberB = toBigIntConverting(numberB->hexString, 1);
@@ -582,46 +516,18 @@ bigInteger* LongPower(bigInteger* numberA, bigInteger* numberB, int bitRate)
 	{
 		if (bitNumberB->value[i] == 1)
 		{
-//			numberC = LongMul(numberC, numberA, bitRate);
-
-			auto* newNumberC = LongMul(numberC, numberA, bitRate);
-			
-			if (newNumberC != numberC)
-			{
-				auto* temp = numberC;
-
-				numberC = newNumberC;
-
-				delete[] temp->value;
-				temp->value = NULL;
-
-				delete temp;
-				temp = NULL;
-			}
+			numberC = LongMul(numberC, numberA, bitRate, false, 1);
 		}
 
 		if (i != bitNumberB->size - 1)
 		{
-//			numberC = LongMul(numberC, numberC, bitRate);
-
-			auto* newNumberC = LongMul(numberC, numberC, bitRate);
-			
-			if (newNumberC != numberC)
-			{
-				auto* temp = numberC;
-
-				numberC = newNumberC;
-
-				delete[] temp->value;
-				temp->value = NULL;
-
-				delete temp;
-				temp = NULL;
-			}
+			numberC = LongMul(numberC, numberC, bitRate, false, 1);
 		}
 	}
 
 	toHexConverting(numberC, bitRate);
+
+	freeMemory(1, bitNumberB);
 
 	return numberC;
 }

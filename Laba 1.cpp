@@ -44,10 +44,12 @@ int main()
 	char choice;
 	std::cin >> choice;
 
+	bigInteger* power;
+
 	if (choice == 'y')
 	{
 		std::cout << "Result of power: ";
-		auto* power = LongPower(numberA, numberB, bitRate);
+		power = LongPower(numberA, numberB, bitRate);
 		std::cout << power->hexString << std::endl;
 	}
 
@@ -75,7 +77,6 @@ int main()
 	std::string s = std::to_string(randomN);
 	randomN = strtoul(s.substr(0, s.length()).c_str(), nullptr, 16);
 
-
 	long long randomNSize;
 	auto* bigN = toBigIntConverting(s, bitRate);
 
@@ -87,12 +88,11 @@ int main()
 
 	for (int i = 1; i <= randomN - 1; i++)
 	{
-		bigSum = LongAdd(bigSum, numberA, bitRate, false);
-
-
+		bigSum = LongAdd(bigSum, numberA, bitRate, false, 1);
 	}
 
 	std::cout << "2.2. A + A + ... + A = ";
 	std::cout << bigSum->hexString << std::endl;
+
 	return 0;
 }
