@@ -1,9 +1,13 @@
-﻿#include <iostream>
+﻿#include <ctime>
+#include <iostream>
 #include <string>
+
 #include "LongArithmetic.h"
 
 int main()
 {
+	srand(time(NULL));
+
 	int bitRate;
 	std::string number;
 
@@ -12,87 +16,87 @@ int main()
 
 	std::cout << "Input number A: ";
 	std::cin >> number;
-	auto* numberA = toBigIntConverting(number, bitRate);
+	auto numberA = toBigIntConverting(number, bitRate);
 
 	std::cout << "Input number B: ";
 	std::cin >> number;
-	auto* numberB = toBigIntConverting(number, bitRate);
+	auto numberB = toBigIntConverting(number, bitRate);
 
 	std::cout << "Result of addition: ";
-	auto* addition = LongAdd(numberA, numberB, bitRate);
+	auto addition = LongAdd(numberA, numberB, bitRate);
 	std::cout << addition->hexString << std::endl;
 
 	std::cout << "Result of subtraction: ";
-	auto* subtraction = LongSub(numberA, numberB, bitRate);
+	auto subtraction = LongSub(numberA, numberB, bitRate);
 	std::cout << subtraction->hexString << std::endl;
 
 	std::cout << "Result of multiplication: ";
-	auto* multiplication = LongMul(numberA, numberB, bitRate);
+	auto multiplication = LongMul(numberA, numberB, bitRate);
 	std::cout << multiplication->hexString << std::endl;
 
-	auto** divisionResult = LongDiv(numberA, numberB, bitRate);
+	auto answer = LongDiv(numberA, numberB, bitRate);
 
 	std::cout << "Whole part from division: ";
-	auto* wholePart = divisionResult[0];
+	auto wholePart = answer->first;
 	std::cout << wholePart->hexString << std::endl;
 
 	std::cout << "Remainder from division: ";
-	auto* remainder = divisionResult[1];
+	auto remainder = answer->second;
 	std::cout << remainder->hexString << std::endl;
 
 	std::cout << "Do you want to A^B?" << std::endl;
 	char choice;
 	std::cin >> choice;
 
-	bigInteger* power;
+	std::shared_ptr<bigInteger> power;
 
 	if (choice == 'y')
 	{
 		std::cout << "Result of power: ";
-		power = LongPower(numberA, numberB, bitRate);
+		power = LongPow(numberA, numberB, bitRate);
 		std::cout << power->hexString << std::endl;
 	}
-
+	
 	std::cout << "-------TESTS------" << std::endl;
-
+	
 	std::cout << "1. Distributivity" << std::endl;
-
+	
 	std::cout << "1.1. (A + B) * A = ";
-	auto* firstPropertie = LongMul(addition, numberA, bitRate);
+	auto firstPropertie = LongMul(addition, numberA, bitRate);
 	std::cout << firstPropertie->hexString << std::endl;
-
+	
 	std::cout << "1.2. A * (A + B) = ";
-	auto* secondPropertie = LongMul(numberA, addition, bitRate);
+	auto secondPropertie = LongMul(numberA, addition, bitRate);
 	std::cout << secondPropertie->hexString << std::endl;
-
+	
 	std::cout << "1.3. A * A + A * B = ";
-	auto* firstMultiplication = LongMul(numberA, numberA, bitRate);
-	auto* thirdPropertie = LongAdd(firstMultiplication, multiplication, bitRate);
+	auto thirdPropertie = LongAdd(LongMul(numberA, numberA, bitRate), multiplication, bitRate);
 	std::cout << thirdPropertie->hexString << std::endl;
- 
+	
 	std::cout << "2. Equivalence of multiplication by addition" << std::endl;
-
+	
 	int randomN = rand() % 100 + 2;
 	std::cout << "n = " << randomN << std::endl;
-	std::string s = std::to_string(randomN);
-	randomN = strtoul(s.substr(0, s.length()).c_str(), nullptr, 16);
-
-	long long randomNSize;
-	auto* bigN = toBigIntConverting(s, bitRate);
-
+	std::string randomNString = std::to_string(randomN);
+	randomN = strtoul(randomNString.substr(0, randomNString.length()).c_str(), nullptr, 16);
+	
+	auto bigRandomN = toBigIntConverting(randomNString, bitRate);
+	
 	std::cout << "2.1. n * A = ";
-	auto* nAMul = LongMul(numberA, bigN, bitRate);
-	std::cout << nAMul->hexString << std::endl;
-
-	auto* bigSum = numberA;
-
+	auto equivMultiplication = LongMul(numberA, bigRandomN, bitRate);
+	std::cout << equivMultiplication->hexString << std::endl;
+	
+	auto equivAddition = numberA;
+	
 	for (int i = 1; i <= randomN - 1; i++)
 	{
-		bigSum = LongAdd(bigSum, numberA, bitRate, false, 1);
+		equivAddition = LongAdd(equivAddition, numberA, bitRate, false);
 	}
+	
+	toHexConverting(equivAddition, bitRate);
 
 	std::cout << "2.2. A + A + ... + A = ";
-	std::cout << bigSum->hexString << std::endl;
+	std::cout << equivAddition->hexString << std::endl;
 
 	return 0;
 }

@@ -1,6 +1,6 @@
-#include <iostream>
 #include <climits>
-#include <cmath>
+#include <ctime>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -9,18 +9,18 @@
 bigInteger::bigInteger()
 {
 	size = 1;
-	value = new unsigned int[1]{ 0 };
+	value = new unsigned int[1]{0};
 	hexString = "0";
 }
 
-bigInteger::bigInteger(const long long& size)
+bigInteger::bigInteger(const long long &size)
 {
 	this->size = size;
 	hexString = "";
 	value = new unsigned int[size];
 }
 
-bigInteger::bigInteger(const long long& size, const std::string& hexString)
+bigInteger::bigInteger(const long long &size, const std::string &hexString)
 {
 	this->size = size;
 	this->hexString = hexString;
@@ -30,11 +30,11 @@ bigInteger::bigInteger(const long long& size, const std::string& hexString)
 bigInteger::~bigInteger()
 {
 	delete[] value;
-	value = NULL;
+	value = nullptr;
 }
 
 // For debugging
-void showBigInteger(bigInteger* number, std::string numberName)
+void showBigInteger(std::shared_ptr<bigInteger> number, std::string numberName)
 {
 	std::cout << numberName << ": " << std::endl;
 
@@ -48,28 +48,7 @@ void showBigInteger(bigInteger* number, std::string numberName)
 	std::cout << std::endl;
 }
 
-void freeMemory(int selfReculc, bigInteger* numberA, bigInteger* numberB)
-{
-	switch (selfReculc)
-	{
-	case 1:
-	{
-		delete numberA;
-		numberA = NULL;
-	}; break;
-
-	case 2:
-	{
-		delete numberB;
-		numberB = NULL;
-	}; break;
-
-	default:
-		break;
-	}
-}
-
-void ZeroEraser(bigInteger* number)
+void ZeroEraser(std::shared_ptr<bigInteger> number)
 {
 	unsigned int zeroCount = 0;
 
@@ -85,27 +64,32 @@ void ZeroEraser(bigInteger* number)
 		}
 	}
 
+	if (number->size - zeroCount == 0)
+	{
+		zeroCount--;
+	}
+
 	if (zeroCount != 0)
 	{
 		long long newSize = number->size - zeroCount;
 
-		auto* optimizedNumberValue = new unsigned int[newSize];
+		auto *optimizedNumberValue = new unsigned int[newSize];
 		std::fill(&optimizedNumberValue[0], &optimizedNumberValue[newSize], 0);
 		std::copy(number->value + zeroCount, number->value + number->size, optimizedNumberValue);
-		
+
 		delete[] number->value;
-		number->value = NULL;
+		number->value = nullptr;
 
 		number->size = newSize;
 		number->value = optimizedNumberValue;
 	}
 }
 
-bigInteger* toBigIntConverting(std::string number, const int& bitRate)
+std::shared_ptr<bigInteger> toBigIntConverting(const std::string &number, const int &bitRate)
 {
 	long long numberSize = number.length();
 
-	bigInteger* bigNumber = new bigInteger;
+	std::shared_ptr<bigInteger> bigNumber;
 
 	if (bitRate >= 4)
 	{
@@ -114,18 +98,18 @@ bigInteger* toBigIntConverting(std::string number, const int& bitRate)
 
 		if (numberSize % hexBitCount != 0)
 		{
-			std::string nullStr;
+			std::string nullptrStr;
 
 			for (int i = hexBitCount - (numberSize % hexBitCount); i > 0; i--)
 			{
-				nullStr += "0";
+				nullptrStr += "0";
 				numberSize++;
 			}
 
-			fixedNumber = nullStr + number;
+			fixedNumber = nullptrStr + number;
 		}
 
-		bigNumber = new bigInteger(numberSize / hexBitCount, number);
+		bigNumber = std::make_shared<bigInteger>(numberSize / hexBitCount, number);
 
 		for (long long i = bigNumber->size - 1; i >= 0; i--)
 		{
@@ -137,7 +121,7 @@ bigInteger* toBigIntConverting(std::string number, const int& bitRate)
 		//count of big bits for one hex cipher
 		int bitForHexCount = (4 >> (bitRate - 1));
 
-		bigNumber = new bigInteger(numberSize * bitForHexCount, number);
+		bigNumber = std::make_shared<bigInteger>(numberSize * bitForHexCount, number);
 
 		for (int i = numberSize - 1; i >= 0; i--)
 		{
@@ -155,7 +139,7 @@ bigInteger* toBigIntConverting(std::string number, const int& bitRate)
 	return bigNumber;
 }
 
-void toHexConverting(bigInteger* bigNumber, int bitRate)
+void toHexConverting(std::shared_ptr<bigInteger> bigNumber, int bitRate)
 {
 	for (long long i = 0; i < bigNumber->size; i++)
 	{
@@ -176,8 +160,6 @@ void toHexConverting(bigInteger* bigNumber, int bitRate)
 				binSum += bigNumber->value[i + j] << (3 - j);
 			}
 
-
-			// Перескочити 4 значення масиву, але добавляємо 3, оскільки в ітераторі вже є i++
 			i += 3;
 
 			smallNumber.push_back(binSum);
@@ -224,10 +206,12 @@ void toHexConverting(bigInteger* bigNumber, int bitRate)
 	}
 }
 
-bool LongComp(bigInteger* numberA, bigInteger* numberB, bool severe)
+bool LongComp(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, bool severe)
 {
-	if (numberA->size < numberB->size) return false;
-	if (numberA->size > numberB->size) return true;
+	if (numberA->size < numberB->size)
+		return false;
+	if (numberA->size > numberB->size)
+		return true;
 
 	for (long long i = 0; i < numberA->size; i++)
 	{
@@ -247,29 +231,31 @@ bool LongComp(bigInteger* numberA, bigInteger* numberB, bool severe)
 
 	switch (severe)
 	{
-	case false: return true;
+	case false:
+		return true;
 
-	case true: return false;
+	case true:
+		return false;
 	}
 }
 
-bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
+std::shared_ptr<bigInteger> LongAdd(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate, bool text)
 {
-	bigInteger* smallerNumber;
-	bigInteger* biggerNumber;
+	std::shared_ptr<bigInteger> smallerNumber;
+	std::shared_ptr<bigInteger> biggerNumber;
 
-	bigInteger* numberC;
+	std::shared_ptr<bigInteger> numberC;
 
 	if (numberA->size >= numberB->size)
 	{
-		numberC = new bigInteger(numberA->size + 1);
+		numberC = std::make_shared<bigInteger>(numberA->size + 1);
 
 		biggerNumber = numberA;
 		smallerNumber = numberB;
 	}
 	else
 	{
-		numberC = new bigInteger(numberB->size + 1);
+		numberC = std::make_shared<bigInteger>(numberB->size + 1);
 
 		biggerNumber = numberB;
 		smallerNumber = numberA;
@@ -277,7 +263,7 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	unsigned long long module = ULLONG_MAX >> (64 - bitRate);
 
-	unsigned int carry = 0;
+	unsigned long long carry = 0;
 
 	long long difference = abs(numberA->size - numberB->size);
 
@@ -298,8 +284,6 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	ZeroEraser(numberC);
 
-	freeMemory(selfReculc, numberA, numberB);
-
 	if (text)
 	{
 		toHexConverting(numberC, bitRate);
@@ -308,20 +292,20 @@ bigInteger* LongAdd(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	return numberC;
 }
 
-bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
+std::shared_ptr<bigInteger> LongSub(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate, bool text)
 {
 	unsigned long long module = static_cast<long long>(1) << bitRate;
 
-	bigInteger* numberC;
+	std::shared_ptr<bigInteger> numberC;
 
 	if (numberA->size < numberB->size)
 	{
-		numberC = new bigInteger;
+		numberC = std::make_shared<bigInteger>();
 
 		return numberC;
 	}
 
-	numberC = new bigInteger(numberA->size);
+	numberC = std::make_shared<bigInteger>(numberA->size);
 
 	long long borrow = 0;
 
@@ -353,7 +337,6 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 		}
 		else
 		{
-			std::cout << module + subtraction << std::endl;
 			numberC->value[i] = module + subtraction;
 			borrow = 1;
 		}
@@ -361,7 +344,7 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 
 	if (borrow != 0)
 	{
-		numberC = new bigInteger;
+		numberC = std::make_shared<bigInteger>();
 
 		return numberC;
 	}
@@ -371,8 +354,6 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 		ZeroEraser(numberC);
 	}
 
-	freeMemory(selfReculc, numberA, numberB);
-
 	if (text)
 	{
 		toHexConverting(numberC, bitRate);
@@ -381,18 +362,18 @@ bigInteger* LongSub(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	return numberC;
 }
 
-bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool text, int selfReculc)
+std::shared_ptr<bigInteger> LongMul(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate, bool text)
 {
 	unsigned long long module = ULLONG_MAX >> (64 - bitRate);
 
-	auto* numberC = new bigInteger(numberA->size +	 numberB->size);
+	auto numberC = std::make_shared<bigInteger>(numberA->size + numberB->size);
 	std::fill(&numberC->value[0], &numberC->value[numberC->size], 0);
 
 	for (long long i = numberB->size - 1; i >= 0; i--)
 	{
 		unsigned long long carry = 0;
-		
-		auto* intermediateMul = new bigInteger(numberA->size + (numberB->size - 1 - i) + 1);
+
+		auto intermediateMul = std::make_shared<bigInteger>(numberA->size + (numberB->size - 1 - i) + 1);
 		std::fill(&intermediateMul->value[0], &intermediateMul->value[intermediateMul->size], 0);
 
 		for (long long j = numberA->size - 1; j >= 0; j--)
@@ -408,12 +389,8 @@ bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 			}
 		}
 
-		numberC = LongAdd(numberC, intermediateMul, bitRate, false, 1);
-
-		freeMemory(1, intermediateMul);
+		numberC = LongAdd(numberC, intermediateMul, bitRate, false);
 	}
-
-	freeMemory(selfReculc, numberA, numberB);
 
 	if (text)
 	{
@@ -423,9 +400,9 @@ bigInteger* LongMul(bigInteger* numberA, bigInteger* numberB, int bitRate, bool 
 	return numberC;
 }
 
-bigInteger* LongShiftBitsToHigh(bigInteger* number, unsigned long long shift)
+std::shared_ptr<bigInteger> LongShiftBitsToHigh(std::shared_ptr<bigInteger> number, unsigned long long shift)
 {
-	auto* highNumber = new bigInteger(number->size + shift);
+	auto highNumber = std::make_shared<bigInteger>(number->size + shift);
 
 	std::copy(number->value, number->value + number->size, highNumber->value);
 	std::fill(&highNumber->value[number->size], &highNumber->value[highNumber->size], 0);
@@ -433,101 +410,101 @@ bigInteger* LongShiftBitsToHigh(bigInteger* number, unsigned long long shift)
 	return highNumber;
 }
 
-void SmallFix(bigInteger* number)
+void SmallFix(std::shared_ptr<bigInteger> number)
 {
 	int fix = 4 - (number->size % 4);
 
 	long long newSize = number->size + fix;
-	auto* fixNumberValue = new unsigned int[newSize];
+	auto *fixNumberValue = new unsigned int[newSize];
 
 	std::fill(&fixNumberValue[0], &fixNumberValue[fix], 0);
 	std::copy(number->value, number->value + number->size, fixNumberValue + fix);
 
 	delete[] number->value;
-	number->value = NULL;
+	number->value = nullptr;
 
 	number->size = newSize;
 	number->value = fixNumberValue;
 }
 
-bigInteger** LongDiv(bigInteger* dividend, bigInteger* divisor, int bitRate)
+std::shared_ptr<std::pair<std::shared_ptr<bigInteger>, std::shared_ptr<bigInteger>>> LongDiv(std::shared_ptr<bigInteger> dividend, std::shared_ptr<bigInteger> divisor, int bitRate, bool onlyWhole)
 {
-	auto* bitDividend = toBigIntConverting(dividend->hexString, 1);
-	auto* bitDivisor = toBigIntConverting(divisor->hexString, 1);
+	auto bitDividend = toBigIntConverting(dividend->hexString, 1);
+	auto bitDivisor = toBigIntConverting(divisor->hexString, 1);
 
-	auto* bitRemainder = new bigInteger(bitDividend->size);
+	auto bitRemainder = std::make_shared<bigInteger>(bitDividend->size);
 	std::copy(bitDividend->value, bitDividend->value + bitDividend->size, bitRemainder->value);
 
-	auto* wholePart = new bigInteger(bitDividend->size);
-	std::fill(&wholePart->value[0], &wholePart->value[bitDividend->size], 0);
+	auto bitWholePart = std::make_shared<bigInteger>(bitDividend->size);
+	std::fill(&bitWholePart->value[0], &bitWholePart->value[bitDividend->size], 0);
 
 	while (LongComp(bitRemainder, bitDivisor, false))
 	{
 		long long tempLength = bitRemainder->size;
 
-		auto* maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
+		auto maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
 
 		if (LongComp(maxBitDivisor, bitRemainder, true))
 		{
-			freeMemory(1, maxBitDivisor);
-
 			tempLength--;
 
 			maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
 		}
 
-		bitRemainder = LongSub(bitRemainder, maxBitDivisor, 1, false, 1);
-
-		freeMemory(1, maxBitDivisor);
+		bitRemainder = LongSub(bitRemainder, maxBitDivisor, 1, false);
 
 		ZeroEraser(bitRemainder);
 
-		wholePart->value[(wholePart->size - 1) - (tempLength - bitDivisor->size)] = 1;
+		bitWholePart->value[(bitWholePart->size - 1) - (tempLength - bitDivisor->size)] = 1;
 	}
 
-	ZeroEraser(wholePart);
+	ZeroEraser(bitWholePart);
 
 	if (bitRemainder->size % 4 != 0)
 	{
 		SmallFix(bitRemainder);
 	}
-	
-	if (wholePart->size % 4 != 0)
+
+	if (bitWholePart->size % 4 != 0)
 	{
-		SmallFix(wholePart);
+		SmallFix(bitWholePart);
 	}
 
-	toHexConverting(wholePart, 1);
-	toHexConverting(bitRemainder, 1);
+	toHexConverting(bitWholePart, 1);
+	auto wholePart = toBigIntConverting(bitWholePart->hexString, bitRate);
 
-	auto** answer = new bigInteger * [2]{ wholePart, bitRemainder };
+	std::shared_ptr<bigInteger> remainder = nullptr;
 
-	return answer;
+	if (!onlyWhole)
+	{
+		toHexConverting(bitRemainder, 1);
+		remainder = toBigIntConverting(bitRemainder->hexString, bitRate);
+	}
+
+	return std::make_shared<std::pair<std::shared_ptr<bigInteger>, std::shared_ptr<bigInteger>>>(std::make_pair(wholePart, remainder));
 }
 
-bigInteger* LongPower(bigInteger* numberA, bigInteger* numberB, int bitRate)
+std::shared_ptr<bigInteger> LongPow(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate)
 {
-	auto* bitNumberB = toBigIntConverting(numberB->hexString, 1);
+	auto bitNumberB = toBigIntConverting(numberB->hexString, 1);
 
-	auto* numberC = new bigInteger;
+	auto numberC = std::make_shared<bigInteger>();
 	numberC->value[0] = static_cast<unsigned int>(1);
 
 	for (long long i = 0; i < bitNumberB->size; i++)
 	{
 		if (bitNumberB->value[i] == 1)
 		{
-			numberC = LongMul(numberC, numberA, bitRate, false, 1);
+			numberC = LongMul(numberC, numberA, bitRate, false);
 		}
 
 		if (i != bitNumberB->size - 1)
 		{
-			numberC = LongMul(numberC, numberC, bitRate, false, 1);
+			numberC = LongMul(numberC, numberC, bitRate, false);
 		}
 	}
 
 	toHexConverting(numberC, bitRate);
-
-	freeMemory(1, bitNumberB);
 
 	return numberC;
 }
