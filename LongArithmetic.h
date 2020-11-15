@@ -16,8 +16,8 @@ struct bigInteger
 
 void showBigInteger(std::shared_ptr<bigInteger> number, std::string numberName = "BigNumber: ");
 
-void ZeroEraser(std::shared_ptr<bigInteger> number);
 void SmallFix(std::shared_ptr<bigInteger> number);
+void ZeroEraser(std::shared_ptr<bigInteger> number);
 
 std::shared_ptr<bigInteger> toBigIntConverting(const std::string &number, const int &bitRate);
 void toHexConverting(std::shared_ptr<bigInteger> bigNumber, int bitRate);

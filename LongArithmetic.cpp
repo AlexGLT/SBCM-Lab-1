@@ -48,6 +48,23 @@ void showBigInteger(std::shared_ptr<bigInteger> number, std::string numberName)
 	std::cout << std::endl;
 }
 
+void SmallFix(std::shared_ptr<bigInteger> number)
+{
+	int fix = 4 - (number->size % 4);
+
+	long long newSize = number->size + fix;
+	auto* fixNumberValue = new unsigned int[newSize];
+
+	std::fill(&fixNumberValue[0], &fixNumberValue[fix], 0);
+	std::copy(number->value, number->value + number->size, fixNumberValue + fix);
+
+	delete[] number->value;
+	number->value = nullptr;
+
+	number->size = newSize;
+	number->value = fixNumberValue;
+}
+
 void ZeroEraser(std::shared_ptr<bigInteger> number)
 {
 	unsigned int zeroCount = 0;
@@ -82,6 +99,49 @@ void ZeroEraser(std::shared_ptr<bigInteger> number)
 
 		number->size = newSize;
 		number->value = optimizedNumberValue;
+	}
+}
+
+std::shared_ptr<bigInteger> LongShiftBitsToHigh(std::shared_ptr<bigInteger> number, unsigned long long shift)
+{
+	auto highNumber = std::make_shared<bigInteger>(number->size + shift);
+
+	std::copy(number->value, number->value + number->size, highNumber->value);
+	std::fill(&highNumber->value[number->size], &highNumber->value[highNumber->size], 0);
+
+	return highNumber;
+}
+
+bool LongComp(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, bool severe)
+{
+	if (numberA->size < numberB->size)
+		return false;
+	if (numberA->size > numberB->size)
+		return true;
+
+	for (long long i = 0; i < numberA->size; i++)
+	{
+		if (numberA->value[i] > numberB->value[i])
+		{
+			return true;
+		}
+		else if (numberA->value[i] < numberB->value[i])
+		{
+			return false;
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	switch (severe)
+	{
+	case false:
+		return true;
+
+	case true:
+		return false;
 	}
 }
 
@@ -123,7 +183,7 @@ std::shared_ptr<bigInteger> toBigIntConverting(const std::string &number, const 
 
 		bigNumber = std::make_shared<bigInteger>(numberSize * bitForHexCount, number);
 
-		for (int i = numberSize - 1; i >= 0; i--)
+		for (long long i = numberSize - 1; i >= 0; i--)
 		{
 			int numberHexBit = strtoul(number.substr(i, 1).c_str(), nullptr, 16);
 
@@ -203,39 +263,6 @@ void toHexConverting(std::shared_ptr<bigInteger> bigNumber, int bitRate)
 	if (bigNumber->hexString == "")
 	{
 		bigNumber->hexString = "0";
-	}
-}
-
-bool LongComp(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, bool severe)
-{
-	if (numberA->size < numberB->size)
-		return false;
-	if (numberA->size > numberB->size)
-		return true;
-
-	for (long long i = 0; i < numberA->size; i++)
-	{
-		if (numberA->value[i] > numberB->value[i])
-		{
-			return true;
-		}
-		else if (numberA->value[i] < numberB->value[i])
-		{
-			return false;
-		}
-		else
-		{
-			continue;
-		}
-	}
-
-	switch (severe)
-	{
-	case false:
-		return true;
-
-	case true:
-		return false;
 	}
 }
 
@@ -398,33 +425,6 @@ std::shared_ptr<bigInteger> LongMul(std::shared_ptr<bigInteger> numberA, std::sh
 	}
 
 	return numberC;
-}
-
-std::shared_ptr<bigInteger> LongShiftBitsToHigh(std::shared_ptr<bigInteger> number, unsigned long long shift)
-{
-	auto highNumber = std::make_shared<bigInteger>(number->size + shift);
-
-	std::copy(number->value, number->value + number->size, highNumber->value);
-	std::fill(&highNumber->value[number->size], &highNumber->value[highNumber->size], 0);
-
-	return highNumber;
-}
-
-void SmallFix(std::shared_ptr<bigInteger> number)
-{
-	int fix = 4 - (number->size % 4);
-
-	long long newSize = number->size + fix;
-	auto *fixNumberValue = new unsigned int[newSize];
-
-	std::fill(&fixNumberValue[0], &fixNumberValue[fix], 0);
-	std::copy(number->value, number->value + number->size, fixNumberValue + fix);
-
-	delete[] number->value;
-	number->value = nullptr;
-
-	number->size = newSize;
-	number->value = fixNumberValue;
 }
 
 std::shared_ptr<std::pair<std::shared_ptr<bigInteger>, std::shared_ptr<bigInteger>>> LongDiv(std::shared_ptr<bigInteger> dividend, std::shared_ptr<bigInteger> divisor, int bitRate, bool onlyWhole)
