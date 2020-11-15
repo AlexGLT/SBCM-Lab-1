@@ -78,7 +78,6 @@ int main()
 	int randomN = rand() % 100 + 2;
 	std::cout << "n = " << randomN << std::endl;
 	std::string randomNString = std::to_string(randomN);
-	randomN = strtoul(randomNString.substr(0, randomNString.length()).c_str(), nullptr, 16);
 	
 	auto bigRandomN = toBigIntConverting(randomNString, bitRate);
 	

@@ -14,7 +14,7 @@ struct bigInteger
 	~bigInteger();
 };
 
-void showBigInteger(std::shared_ptr<bigInteger> number, std::string numberName = "BigNumber: ");
+void showBigInteger(std::shared_ptr<bigInteger> number, std::string numberName = "BigNumber");
 
 void SmallFix(std::shared_ptr<bigInteger> number);
 void ZeroEraser(std::shared_ptr<bigInteger> number);
@@ -23,7 +23,7 @@ std::shared_ptr<bigInteger> toBigIntConverting(const std::string &number, const 
 void toHexConverting(std::shared_ptr<bigInteger> bigNumber, int bitRate);
 
 bool LongComp(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, bool severe);
-std::shared_ptr<bigInteger> LongShiftBitsToHigh(std::shared_ptr<bigInteger> number, unsigned long long shift);
+std::shared_ptr<bigInteger> LongShiftBits(std::shared_ptr<bigInteger> number, long long shift);
 
 std::shared_ptr<bigInteger> LongAdd(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate, bool text = true);
 std::shared_ptr<bigInteger> LongSub(std::shared_ptr<bigInteger> numberA, std::shared_ptr<bigInteger> numberB, int bitRate, bool text = true);

@@ -86,7 +86,7 @@ void ZeroEraser(std::shared_ptr<bigInteger> number)
 		zeroCount--;
 	}
 
-	if (zeroCount != 0)
+	if (zeroCount > 0)
 	{
 		long long newSize = number->size - zeroCount;
 
@@ -102,12 +102,22 @@ void ZeroEraser(std::shared_ptr<bigInteger> number)
 	}
 }
 
-std::shared_ptr<bigInteger> LongShiftBitsToHigh(std::shared_ptr<bigInteger> number, unsigned long long shift)
+std::shared_ptr<bigInteger> LongShiftBits(std::shared_ptr<bigInteger> number, long long shift)
 {
+	if (number->size == 1 && shift < 0)
+	{
+		return number;
+	}
+
 	auto highNumber = std::make_shared<bigInteger>(number->size + shift);
 
-	std::copy(number->value, number->value + number->size, highNumber->value);
-	std::fill(&highNumber->value[number->size], &highNumber->value[highNumber->size], 0);
+	if (shift > 0)
+	{
+		std::fill(&highNumber->value[number->size], &highNumber->value[highNumber->size], 0);
+		shift = 0;
+	}
+
+	std::copy(number->value, number->value + number->size + shift, highNumber->value);
 
 	return highNumber;
 }
@@ -201,6 +211,8 @@ std::shared_ptr<bigInteger> toBigIntConverting(const std::string &number, const 
 
 void toHexConverting(std::shared_ptr<bigInteger> bigNumber, int bitRate)
 {
+	bigNumber->hexString = "";
+
 	for (long long i = 0; i < bigNumber->size; i++)
 	{
 		int binSum = 0;
@@ -442,13 +454,13 @@ std::shared_ptr<std::pair<std::shared_ptr<bigInteger>, std::shared_ptr<bigIntege
 	{
 		long long tempLength = bitRemainder->size;
 
-		auto maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
+		auto maxBitDivisor = LongShiftBits(bitDivisor, (tempLength - bitDivisor->size));
 
 		if (LongComp(maxBitDivisor, bitRemainder, true))
 		{
 			tempLength--;
 
-			maxBitDivisor = LongShiftBitsToHigh(bitDivisor, (tempLength - bitDivisor->size));
+			maxBitDivisor = LongShiftBits(bitDivisor, (tempLength - bitDivisor->size));
 		}
 
 		bitRemainder = LongSub(bitRemainder, maxBitDivisor, 1, false);
